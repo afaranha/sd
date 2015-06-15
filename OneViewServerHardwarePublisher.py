@@ -28,14 +28,18 @@ connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
 
-channel.exchange_declare(exchange='oneview',
-                         type='direct')
+channel.queue_declare(queue='oneview_serverhardware_queue', durable=True)
+#channel.exchange_declare(exchange='oneview',
+#                         type='direct')
 try:
     while (True):
         message = create_random_server_hardware_message()
-        channel.basic_publish(exchange='oneview',
-                              routing_key='server_hardware',
-                              body=message)
+        channel.basic_publish(exchange='',
+                              routing_key='oneview_serverhardware_queue',
+                              body=message,
+                              properties=pika.BasicProperties(
+                                  delivery_mode=2
+                              ))
 
         print " [x] Sent server_hardware:%r" % (message)
         time.sleep(2)

@@ -1,27 +1,32 @@
 #!/usr/bin/env python
 import json
-#from novaclient.client import Client
 from ironicclient import client as ironic_client
 import pika
+import time
+
 
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
 
-channel.exchange_declare(exchange='oneview',
-                         type='direct')
+#channel.exchange_declare(exchange='oneview',
+#                         type='direct')
 
-result = channel.queue_declare(exclusive=True)
-queue_name = result.method.queue
+channel.queue_declare(queue='oneview_serverhardware_queue', durable=True)
+#result = channel.queue_declare()
+#queue_name = result.method.queue
 
-channel.queue_bind(exchange='oneview',
-                   queue=queue_name,
-                   routing_key='server_hardware')
+#channel.queue_bind(exchange='oneview',
+#                   queue=queue_name,
+#                   routing_key='server_hardware')
 
 kwargs = {'os_username': 'admin', 'os_password': 'nomoresecrete',
-          'os_auth_url': '', 'os_tenant_name': 'admin'}
-#ironic = ironic_client.get_client(1, **kwargs)
-#novaclient = Client(2, 'admin', 'nomoresecrete', 'admin', args.os_auth_url)
+          'os_auth_url': 'http://10.4.10.245:5000/v2.0', 'os_tenant_name': 'admin'}
+print "client"
+ironic = ironic_client.get_client(1, **kwargs)
+print ironic
+print ironic.node.list()
+
 print ' [*] Waiting for new Server Hardware. To exit press CTRL+C'
 
 def _create_ironic_node(server_hardware_info):
@@ -47,10 +52,12 @@ def callback(ch, method, properties, body):
     print(server_hardware_info)
     #novaclient.flavors.create(flavor_name, flavor.ram_mb, flavor.cpus, flavor.disk)
     _create_ironic_node(server_hardware_info)
+    time.sleep(1)
+    ch.basic_ack(delivery_tag = method.delivery_tag)
+    
 
-
+channel.basic_qos(prefetch_count=1)
 channel.basic_consume(callback,
-                      queue=queue_name,
-                      no_ack=True)
+                      queue='oneview_serverhardware_queue')
 
 channel.start_consuming()
