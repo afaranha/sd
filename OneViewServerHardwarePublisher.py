@@ -2,6 +2,7 @@
 import json
 import pika
 import random
+import time
 import uuid
 
 def create_server_hardware_message(cpus, memory_mb, local_gb,
@@ -29,11 +30,15 @@ channel = connection.channel()
 
 channel.exchange_declare(exchange='oneview',
                          type='direct')
+try:
+    while (True):
+        message = create_random_server_hardware_message()
+        channel.basic_publish(exchange='oneview',
+                              routing_key='server_hardware',
+                              body=message)
 
-message = create_random_server_hardware_message()
-channel.basic_publish(exchange='oneview',
-                      routing_key='server_hardware',
-                      body=message)
+        print " [x] Sent server_hardware:%r" % (message)
+        time.sleep(2)
 
-print " [x] Sent server_hardware:%r" % (message)
-connection.close()
+finally:
+    connection.close()

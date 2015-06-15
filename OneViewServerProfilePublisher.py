@@ -2,6 +2,7 @@
 import json
 import pika
 import random
+import time
 import uuid
 
 def create_server_profile_message(cpus, disk, ram_mb, name):
@@ -27,10 +28,15 @@ channel = connection.channel()
 channel.exchange_declare(exchange='oneview',
                          type='direct')
 
-message = create_random_server_profile_message()
-channel.basic_publish(exchange='oneview',
-                      routing_key='server_profile',
-                      body=message)
+try:
+    while True:
+        message = create_random_server_profile_message()
+        channel.basic_publish(exchange='oneview',
+                              routing_key='server_profile',
+                              body=message)
 
-print " [x] Sent server_profile:%r" % (message)
-connection.close()
+        print " [x] Sent server_profile:%r" % (message)
+        time.sleep(2)
+
+finally:
+    connection.close()
