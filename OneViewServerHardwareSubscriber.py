@@ -9,7 +9,7 @@ channel.exchange_declare(exchange='oneview',
                          type='direct')
 
 result = channel.queue_declare(exclusive=True)
-queue_name = result.method_queue
+queue_name = result.method.queue
 
 channel.queue_bind(exchange='oneview',
                    queue=queue_name,

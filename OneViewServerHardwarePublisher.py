@@ -12,7 +12,7 @@ channel.exchange_declare(exchange='oneview',
 message = ' '.join(sys.argv[1:]) or 'New Server Hardware'
 channel.basic_publish(exchange='oneview',
                       routing_key='server_hardware',
-                      message=message)
+                      body=message)
 
 print " [x] Sent server_hardware:%r" % (message)
 connection.close()
