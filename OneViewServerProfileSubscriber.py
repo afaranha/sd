@@ -5,34 +5,23 @@ import pika
 import time
 
 
-connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host='localhost'))
+parameters = pika.URLParameters('amqp://admin:root@1r0n1c@10.4.10.244:5672/%2F')
+connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 
-#channel.exchange_declare(exchange='oneview',
-#                         type='direct')
 
 channel.queue_declare(queue='oneview_serverprofile_queue', durable=True)
-#result = channel.queue_declare(exclusive=True)
-#queue_name = result.method.queue
 
-#channel.queue_bind(exchange='oneview',
-#                   queue=queue_name,
-#                   routing_key='server_profile')
-
-print 'client'
 novaclient = Client(2, 'admin', 'nomoresecrete', 'admin',
                     'http://10.4.10.245:5000/v2.0')
-print novaclient.flavors.list()
-print ' [*] Waiting for new Server Hardware. To exit press CTRL+C'
+print ' [*] Waiting for new Server Profile. To exit press CTRL+C'
 
 
 def callback(ch, method, properties, body):
-    print " [x] server_hardware:%r" % (body)
+    print " [x] server_profile:%r" % (body)
     flavor_info = json.loads(body)
     print(flavor_info)
-    #novaclient.flavors.create(flavor_name, flavor.ram_mb, flavor.cpus, flavor.disk)
-    time.sleep(5)                                                              
+    novaclient.flavors.create(flavor_info.get('name'), flavor_info.get('ram_mb'), flavor_info.get('cpus'), flavor_info.get('disk'))
     ch.basic_ack(delivery_tag = method.delivery_tag)
 
 

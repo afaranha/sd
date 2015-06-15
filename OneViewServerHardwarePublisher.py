@@ -2,6 +2,7 @@
 import json
 import pika
 import random
+import sys
 import time
 import uuid
 
@@ -14,7 +15,7 @@ def create_server_hardware_message(cpus, memory_mb, local_gb,
 
 
 def create_random_server_hardware_message():
-    cpus = random.randint(1, 60)
+    cpus = random.choice([1, 2, 4, 8, 16, 32, 64, 128])
     memory_mb = random.choice([512, 1024, 2048, 4096, 8192, 16384, 32768,
                                65536])
     local_gb = random.choice([2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048])
@@ -24,15 +25,18 @@ def create_random_server_hardware_message():
                                           server_hardware_uri)
 
 
-connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host='localhost'))
+parameters = pika.URLParameters('amqp://admin:root@1r0n1c@10.4.10.244:5672/%2F')
+connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 
 channel.queue_declare(queue='oneview_serverhardware_queue', durable=True)
-#channel.exchange_declare(exchange='oneview',
-#                         type='direct')
+
+number_of_serverhardware = sys.argv[1:2] or ['1']
+number_of_serverhardware = int(number_of_serverhardware[0])
+print "Sending %s Server Hardware" % number_of_serverhardware
+
 try:
-    while (True):
+    while (number_of_serverhardware > 0):
         message = create_random_server_hardware_message()
         channel.basic_publish(exchange='',
                               routing_key='oneview_serverhardware_queue',
@@ -43,6 +47,7 @@ try:
 
         print " [x] Sent server_hardware:%r" % (message)
         time.sleep(2)
+        number_of_serverhardware = number_of_serverhardware -1
 
 finally:
     connection.close()
